@@ -9,37 +9,10 @@ from Constants.constants import FRAME_DECODE_COLOR_MODE
 
 
 class ServerFrameProcessingModule:
-    """
-    Manages the processing of video frames received from clients.
-
-    This module is responsible for decoding video frames sent by clients and
-    invoking a callback function for further processing.
-
-    Attributes:
-        new_frame_callback (function): A callback function that is called when
-        a new frame is received.
-    """
-
     def __init__(self, new_frame_callback=None):
-        """
-        Initializes the ServerFrameProcessingModule with an optional callback
-        function.
-
-        Args:
-            new_frame_callback (function): Optional. A function to be called
-            when a new frame is received.
-        """
         self.new_frame_callback = new_frame_callback
 
-    def process_received_frame(self, data, client_address):
-        """
-        Processes a received video frame.
-
-        Args:
-            data (bytes): The data containing the encoded video frame.
-            client_address (tuple): The address of the client that
-             sent the frame.
-        """
+    def handle_incoming_frame(self, data, client_address):
         try:
             frame_data, username = pickle.loads(data)
             frame = cv2.imdecode(frame_data, FRAME_DECODE_COLOR_MODE)
