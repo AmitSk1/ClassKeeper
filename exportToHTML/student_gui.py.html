@@ -1,0 +1,271 @@
+<html>
+<head>
+<title>student_gui.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6a8759;}
+.s4 { color: #808080;}
+.s5 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+student_gui.py</font>
+</center></td></tr></table>
+<pre><span class="s0">&quot;&quot;&quot; 
+Client GUI 
+Amit Skarbin 
+ 
+A GUI for the student client to enter their name and start streaming. 
+&quot;&quot;&quot;</span>
+
+<span class="s2">import </span><span class="s1">os</span>
+<span class="s2">import </span><span class="s1">sys</span>
+<span class="s2">from </span><span class="s1">tkinter </span><span class="s2">import </span><span class="s1">Tk</span><span class="s2">, </span><span class="s1">StringVar</span><span class="s2">, </span><span class="s1">messagebox</span><span class="s2">, </span><span class="s1">filedialog</span><span class="s2">, </span><span class="s1">ttk</span>
+<span class="s2">from </span><span class="s1">Client_Modules.client </span><span class="s2">import </span><span class="s1">Client</span>
+
+
+<span class="s2">class </span><span class="s1">ClientGUI:</span>
+    <span class="s0">&quot;&quot;&quot; 
+    GUI class for the client application. 
+ 
+    This class creates a graphical user interface for the client to control 
+    the video streaming and file operations to the server. 
+    &quot;&quot;&quot;</span>
+
+    <span class="s2">def </span><span class="s1">__init__(self</span><span class="s2">, </span><span class="s1">host</span><span class="s2">, </span><span class="s1">port):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Initializes the ClientGUI with a Client. 
+ 
+        Args: 
+            The server IP address. 
+            The port number on which the server is listening. 
+            client name 
+            flag to check if stream 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.start_stream_button = </span><span class="s2">None</span>
+        <span class="s1">self.client = Client(host</span><span class="s2">, </span><span class="s1">port)</span>
+        <span class="s1">self.window = Tk()</span>
+        <span class="s1">self.window.title(</span><span class="s3">&quot;Student GUI&quot;</span><span class="s1">)</span>
+        <span class="s1">self.username_var = StringVar()</span>
+        <span class="s1">self.stream_started = </span><span class="s2">False</span>
+        <span class="s1">self.setup_gui()</span>
+
+    <span class="s2">def </span><span class="s1">setup_gui(self):</span>
+        <span class="s4"># Use a style object to enhance UI appearance</span>
+        <span class="s1">style = ttk.Style()</span>
+        <span class="s1">style.configure(</span><span class="s3">'TButton'</span><span class="s2">, </span><span class="s1">font=(</span><span class="s3">'Arial'</span><span class="s2">, </span><span class="s5">10</span><span class="s1">)</span><span class="s2">, </span><span class="s1">padding=</span><span class="s5">10</span><span class="s1">)</span>
+        <span class="s1">style.configure(</span><span class="s3">'TLabel'</span><span class="s2">, </span><span class="s1">font=(</span><span class="s3">'Arial'</span><span class="s2">, </span><span class="s5">12</span><span class="s1">)</span><span class="s2">, </span><span class="s1">padding=</span><span class="s5">5</span><span class="s1">)</span>
+        <span class="s1">style.configure(</span><span class="s3">'TEntry'</span><span class="s2">, </span><span class="s1">font=(</span><span class="s3">'Arial'</span><span class="s2">, </span><span class="s5">12</span><span class="s1">)</span><span class="s2">, </span><span class="s1">padding=</span><span class="s5">5</span><span class="s1">)</span>
+
+        <span class="s4"># Main layout frame</span>
+        <span class="s1">main_frame = ttk.Frame(self.window</span><span class="s2">, </span><span class="s1">padding=</span><span class="s3">&quot;30 30 30 30&quot;</span><span class="s1">)</span>
+        <span class="s1">main_frame.grid(row=</span><span class="s5">0</span><span class="s2">, </span><span class="s1">column=</span><span class="s5">0</span><span class="s2">, </span><span class="s1">sticky=</span><span class="s3">&quot;EWNS&quot;</span><span class="s1">)</span>
+        <span class="s1">main_frame.columnconfigure(</span><span class="s5">0</span><span class="s2">, </span><span class="s1">weight=</span><span class="s5">1</span><span class="s1">)</span>
+        <span class="s1">main_frame.rowconfigure(</span><span class="s5">0</span><span class="s2">, </span><span class="s1">weight=</span><span class="s5">1</span><span class="s1">)</span>
+
+        <span class="s4"># User name entry</span>
+        <span class="s1">ttk.Label(main_frame</span><span class="s2">, </span><span class="s1">text=</span><span class="s3">&quot;Enter your name:&quot;</span><span class="s1">).grid(row=</span><span class="s5">0</span><span class="s2">, </span><span class="s1">column=</span><span class="s5">0</span><span class="s2">,</span>
+                                                            <span class="s1">sticky=</span><span class="s3">'W'</span><span class="s1">)</span>
+        <span class="s1">name_entry = ttk.Entry(main_frame</span><span class="s2">, </span><span class="s1">textvariable=self.username_var</span><span class="s2">,</span>
+                               <span class="s1">width=</span><span class="s5">30</span><span class="s1">)</span>
+        <span class="s1">name_entry.grid(row=</span><span class="s5">0</span><span class="s2">, </span><span class="s1">column=</span><span class="s5">1</span><span class="s2">, </span><span class="s1">sticky=</span><span class="s3">'EW'</span><span class="s1">)</span>
+
+        <span class="s4"># Control buttons</span>
+        <span class="s1">self.start_stream_button = ttk.Button(main_frame</span><span class="s2">,</span>
+                                              <span class="s1">text=</span><span class="s3">&quot;Start Streaming&quot;</span><span class="s2">,</span>
+                                              <span class="s1">command=self.start_streaming)</span>
+        <span class="s1">self.start_stream_button.grid(row=</span><span class="s5">1</span><span class="s2">, </span><span class="s1">column=</span><span class="s5">0</span><span class="s2">, </span><span class="s1">sticky=</span><span class="s3">'EW'</span><span class="s1">)</span>
+
+        <span class="s1">ttk.Button(main_frame</span><span class="s2">, </span><span class="s1">text=</span><span class="s3">&quot;Finish Test&quot;</span><span class="s2">,</span>
+                   <span class="s1">command=self.finish_test).grid(row=</span><span class="s5">1</span><span class="s2">, </span><span class="s1">column=</span><span class="s5">1</span><span class="s2">, </span><span class="s1">sticky=</span><span class="s3">'EW'</span><span class="s1">)</span>
+        <span class="s1">ttk.Button(main_frame</span><span class="s2">, </span><span class="s1">text=</span><span class="s3">&quot;Upload File&quot;</span><span class="s2">,</span>
+                   <span class="s1">command=self.select_file_to_upload).grid(row=</span><span class="s5">2</span><span class="s2">, </span><span class="s1">column=</span><span class="s5">0</span><span class="s2">,</span>
+                                                            <span class="s1">sticky=</span><span class="s3">'EW'</span><span class="s1">)</span>
+        <span class="s1">ttk.Button(main_frame</span><span class="s2">, </span><span class="s1">text=</span><span class="s3">&quot;Download File&quot;</span><span class="s2">,</span>
+                   <span class="s1">command=self.download_file).grid(row=</span><span class="s5">2</span><span class="s2">, </span><span class="s1">column=</span><span class="s5">1</span><span class="s2">,</span>
+                                                    <span class="s1">sticky=</span><span class="s3">'EW'</span><span class="s1">)</span>
+        <span class="s1">ttk.Button(main_frame</span><span class="s2">, </span><span class="s1">text=</span><span class="s3">&quot;Open File&quot;</span><span class="s2">, </span><span class="s1">command=self.open_file).grid(</span>
+            <span class="s1">row=</span><span class="s5">3</span><span class="s2">, </span><span class="s1">column=</span><span class="s5">0</span><span class="s2">, </span><span class="s1">sticky=</span><span class="s3">'EW'</span><span class="s2">, </span><span class="s1">columnspan=</span><span class="s5">2</span><span class="s1">)</span>
+
+        <span class="s4"># Enable window resizing</span>
+        <span class="s1">self.window.resizable(</span><span class="s2">True, True</span><span class="s1">)</span>
+        <span class="s1">self.window.columnconfigure(</span><span class="s5">0</span><span class="s2">, </span><span class="s1">weight=</span><span class="s5">1</span><span class="s1">)</span>
+        <span class="s1">self.window.rowconfigure(</span><span class="s5">0</span><span class="s2">, </span><span class="s1">weight=</span><span class="s5">1</span><span class="s1">)</span>
+
+        <span class="s1">self.window.protocol(</span><span class="s3">&quot;WM_DELETE_WINDOW&quot;</span><span class="s2">, </span><span class="s1">self.on_closing)</span>
+
+    <span class="s2">def </span><span class="s1">open_file(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+            Opens all files in the 'C:/testKeeper' directory using the default 
+            application for each file. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">opened = </span><span class="s2">False</span>
+        <span class="s1">directory = </span><span class="s3">&quot;C:/testKeeper&quot;  </span><span class="s4"># Set your directory</span>
+        <span class="s2">if not </span><span class="s1">os.path.exists(directory):</span>
+            <span class="s1">messagebox.showerror(</span><span class="s3">&quot;Error&quot;</span><span class="s2">,</span>
+                                 <span class="s3">&quot;The specified directory does not exist.&quot;</span><span class="s1">)</span>
+            <span class="s2">return</span>
+
+        <span class="s2">for </span><span class="s1">file_name </span><span class="s2">in </span><span class="s1">os.listdir(directory):</span>
+            <span class="s1">file_path = os.path.join(directory</span><span class="s2">, </span><span class="s1">file_name)</span>
+            <span class="s2">if </span><span class="s1">os.path.isfile(</span>
+                    <span class="s1">file_path):  </span><span class="s4"># Ensure it is a file, not a directory</span>
+                <span class="s2">try</span><span class="s1">:</span>
+                    <span class="s1">os.startfile(file_path)</span>
+                    <span class="s1">opened = </span><span class="s2">True</span>
+                <span class="s2">except </span><span class="s1">Exception </span><span class="s2">as </span><span class="s1">e:</span>
+                    <span class="s1">messagebox.showerror(</span><span class="s3">&quot;Error&quot;</span><span class="s2">,</span>
+                                         <span class="s3">f&quot;Failed to open &quot;</span>
+                                         <span class="s3">f&quot;file: </span><span class="s2">{</span><span class="s1">file_path</span><span class="s2">}\n</span><span class="s3">Error: </span><span class="s2">{</span><span class="s1">e</span><span class="s2">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+        <span class="s2">if </span><span class="s1">opened:</span>
+            <span class="s1">messagebox.showinfo(</span><span class="s3">&quot;open&quot;</span><span class="s2">, </span><span class="s3">&quot;file open successefully&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">is_english_name(self</span><span class="s2">, </span><span class="s1">name):</span>
+        <span class="s0">&quot;&quot;&quot; 
+             Check if all characters in the name are English letters 
+        &quot;&quot;&quot;</span>
+        <span class="s2">for </span><span class="s1">char </span><span class="s2">in </span><span class="s1">name:</span>
+            <span class="s2">if not </span><span class="s1">char.isalpha() </span><span class="s2">or not </span><span class="s1">char.isascii():</span>
+                <span class="s2">return False</span>
+        <span class="s2">return True</span>
+
+    <span class="s2">def </span><span class="s1">start_streaming(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Starts the video streaming process with the entered username. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">username = self.username_var.get()</span>
+
+        <span class="s2">if not </span><span class="s1">username:</span>
+            <span class="s1">messagebox.showerror(</span><span class="s3">&quot;Error&quot;</span><span class="s2">, </span><span class="s3">&quot;Please enter your name.&quot;</span><span class="s1">)</span>
+        <span class="s2">elif not </span><span class="s1">self.is_english_name(username):</span>
+            <span class="s1">messagebox.showerror(</span><span class="s3">&quot;Error&quot;</span><span class="s2">, </span><span class="s3">&quot;Please enter an English name.&quot;</span><span class="s1">)</span>
+        <span class="s2">else</span><span class="s1">:</span>
+            <span class="s1">self.client.start_stream(username)</span>
+            <span class="s1">self.stream_started = </span><span class="s2">True</span>
+            <span class="s1">self.start_stream_button.configure(text=</span><span class="s3">&quot;Streaming...&quot;</span><span class="s2">,</span>
+                                               <span class="s1">state=</span><span class="s3">'disabled'</span><span class="s2">,</span>
+                                               <span class="s1">style=</span><span class="s3">'Streaming.TButton'</span><span class="s1">)</span>
+            <span class="s1">messagebox.showinfo(</span><span class="s3">&quot;Streaming&quot;</span><span class="s2">,</span>
+                                <span class="s3">&quot;You are now streaming. Good luck!&quot;</span><span class="s1">)</span>
+            <span class="s4"># check if teacher finish test</span>
+            <span class="s1">self.check_test_over_flag()</span>
+
+    <span class="s2">def </span><span class="s1">check_test_over_flag(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        checks if the server finish the test bade on signal from the server. 
+        return this method every 1 second 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if </span><span class="s1">self.client.test_over:</span>
+
+            <span class="s1">self.handle_test_over()</span>
+        <span class="s2">else</span><span class="s1">:</span>
+            <span class="s1">self.window.after(</span><span class="s5">1000</span><span class="s2">, </span><span class="s1">self.check_test_over_flag)</span>
+
+    <span class="s2">def </span><span class="s1">handle_test_over(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+            Handles actions to be performed 
+            once the server signals the test is over. 
+ 
+            Displays a message informing the user the test is completed, 
+            stops the client 
+            from streaming, destroys the application window, 
+            and exits the program. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">messagebox.showinfo(</span><span class="s3">&quot;TEST OVER&quot;</span><span class="s2">, </span><span class="s3">&quot;The test will be over in one &quot;</span>
+                                         <span class="s3">&quot;minute , submit the test&quot;</span><span class="s1">)</span>
+
+        <span class="s1">self.window.after(</span><span class="s5">60000</span><span class="s2">, </span><span class="s1">self.stop_test)  </span><span class="s4"># wait one minute</span>
+        <span class="s4"># before finish the test</span>
+
+    <span class="s2">def </span><span class="s1">stop_test(self):</span>
+        <span class="s1">self.client.stop_client()</span>
+        <span class="s1">self.window.destroy()</span>
+        <span class="s1">messagebox.showinfo(</span><span class="s3">&quot;Test Over&quot;</span><span class="s2">,</span>
+                            <span class="s3">&quot;The test is over. The application &quot;</span>
+                            <span class="s3">&quot;will now close.&quot;</span><span class="s1">)</span>
+        <span class="s1">sys.exit()</span>
+
+    <span class="s2">def </span><span class="s1">on_closing(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Handles the event when the GUI window is closing. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if </span><span class="s1">messagebox.askokcancel(</span><span class="s3">&quot;Quit&quot;</span><span class="s2">, </span><span class="s3">&quot;Do you want to exit?&quot;</span><span class="s1">):</span>
+            <span class="s1">self.window.destroy()</span>
+            <span class="s1">self.client.stop_client()</span>
+            <span class="s1">sys.exit()</span>
+
+    <span class="s2">def </span><span class="s1">finish_test(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Stops the streaming process. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if </span><span class="s1">messagebox.askokcancel(</span><span class="s3">&quot;Quit&quot;</span><span class="s2">, </span><span class="s3">&quot;Do you want to finish the test&quot;</span><span class="s1">):</span>
+            <span class="s1">self.window.destroy()</span>
+            <span class="s1">self.client.stop_client()</span>
+            <span class="s1">sys.exit()  </span><span class="s4"># This will exit the program</span>
+
+    <span class="s2">def </span><span class="s1">check_stream_started(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Checks if the stream has started and displays an error message if not. 
+        Returns True if the stream has started, False otherwise. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if not </span><span class="s1">self.stream_started:</span>
+            <span class="s1">messagebox.showerror(</span><span class="s3">&quot;Error&quot;</span><span class="s2">, </span><span class="s3">&quot;Please enter the name and then&quot;</span>
+                                          <span class="s3">&quot;start the stream.&quot;</span><span class="s1">)</span>
+            <span class="s2">return False</span>
+        <span class="s2">return True</span>
+
+    <span class="s2">def </span><span class="s1">select_file_to_upload(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Opens a file dialog to select a file and uploads it to the server. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if </span><span class="s1">self.check_stream_started():</span>
+            <span class="s1">username = self.username_var.get()</span>
+            <span class="s1">file_path = filedialog.askopenfilename()</span>
+            <span class="s2">if </span><span class="s1">file_path:</span>
+                <span class="s1">self.client.file_management_module.upload_file(file_path</span><span class="s2">,</span>
+                                                               <span class="s1">username)</span>
+                <span class="s1">messagebox.showinfo(</span><span class="s3">&quot;Upload&quot;</span><span class="s2">,</span>
+                                    <span class="s3">&quot;File successfully uploaded &quot;</span>
+                                    <span class="s3">&quot;to the teacher.&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">download_file(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Requests the last file from the server and saves it if available. 
+        Shows a message if no file is available. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if </span><span class="s1">self.check_stream_started():</span>
+            <span class="s1">directory = </span><span class="s3">&quot;C:/testKeeper&quot;</span>
+            <span class="s2">if not </span><span class="s1">os.path.exists(directory):</span>
+                <span class="s1">os.makedirs(directory)</span>
+
+            <span class="s4"># Request the last file from the server</span>
+            <span class="s1">self.client.file_management_module.request_last_file()</span>
+            <span class="s1">check = self.client.file_management_module.check_if_file_upload()</span>
+            <span class="s2">if not </span><span class="s1">check:</span>
+                <span class="s1">messagebox.showinfo(</span><span class="s3">&quot;Download&quot;</span><span class="s2">,</span>
+                                    <span class="s3">&quot;No file available for download.&quot;</span><span class="s1">)</span>
+            <span class="s2">else</span><span class="s1">:</span>
+                <span class="s1">self.client.file_management_module.receive_file_from_server(</span>
+                    <span class="s1">directory)</span>
+                <span class="s1">messagebox.showinfo(</span><span class="s3">&quot;Download Complete&quot;</span><span class="s2">,</span>
+                                    <span class="s3">f&quot;File saved to </span><span class="s2">{</span><span class="s1">directory</span><span class="s2">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">run(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Runs the main loop of the GUI. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.window.mainloop()</span>
+
+
+<span class="s2">if </span><span class="s1">__name__ == </span><span class="s3">&quot;__main__&quot;</span><span class="s1">:</span>
+    <span class="s1">gui = ClientGUI(</span><span class="s3">'127.0.0.1'</span><span class="s2">, </span><span class="s5">1278</span><span class="s1">)</span>
+    <span class="s1">gui.run()</span>
+</pre>
+</body>
+</html>

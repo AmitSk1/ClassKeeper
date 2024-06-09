@@ -1,0 +1,92 @@
+<html>
+<head>
+<title>client_streaming.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+client_streaming.py</font>
+</center></td></tr></table>
+<pre><span class="s0">&quot;&quot;&quot; 
+client for streaming 
+Amit Skarbin 
+&quot;&quot;&quot;</span>
+
+<span class="s2">import </span><span class="s1">cv2</span>
+<span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
+<span class="s2">import </span><span class="s1">pyautogui</span>
+<span class="s2">from </span><span class="s1">constants </span><span class="s2">import </span><span class="s1">RESOLUTION_VERTICAL</span><span class="s2">, </span><span class="s1">RESOLUTION_HORIZONTAL</span><span class="s2">, </span><span class="s1">\</span>
+    <span class="s1">CAPTURE_DEVICE_INDEX</span>
+
+
+<span class="s2">class </span><span class="s1">ClientStreamingModule:</span>
+    <span class="s0">&quot;&quot;&quot; 
+    Manages the streaming of video data for the client. 
+    This module handles the capture of screen and camera frames and combines 
+    them for streaming. 
+ 
+    Attributes: 
+        resolution (tuple): The resolution for capturing video frames. 
+        camera (cv2.VideoCapture): The camera device for capturing video frames 
+    &quot;&quot;&quot;</span>
+
+    <span class="s2">def </span><span class="s1">__init__(self</span><span class="s2">,</span>
+                 <span class="s1">resolution=(RESOLUTION_VERTICAL</span><span class="s2">, </span><span class="s1">RESOLUTION_HORIZONTAL)):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Initializes the ClientStreamingModule with a specified resolution. 
+ 
+        Args: 
+            resolution (tuple): The resolution to be used for video capture. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.resolution = resolution</span>
+        <span class="s1">self.camera = cv2.VideoCapture(CAPTURE_DEVICE_INDEX)</span>
+
+    <span class="s2">def </span><span class="s1">capture_screen(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Captures the current screen. 
+ 
+        Returns: 
+            numpy.ndarray: An array representing the captured screen frame. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">screen = pyautogui.screenshot()</span>
+        <span class="s1">screen_np = np.array(screen)</span>
+        <span class="s1">screen_np = cv2.cvtColor(screen_np</span><span class="s2">, </span><span class="s1">cv2.COLOR_BGR2RGB)</span>
+        <span class="s2">return </span><span class="s1">cv2.resize(screen_np</span><span class="s2">, </span><span class="s1">self.resolution)</span>
+
+    <span class="s2">def </span><span class="s1">capture_camera_frame(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Captures a frame from the camera. 
+ 
+        Returns: 
+            numpy.ndarray: An array representing the captured camera frame. 
+            None if the frame capture fails. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">ret</span><span class="s2">, </span><span class="s1">cam_frame = self.camera.read()</span>
+        <span class="s2">if not </span><span class="s1">ret:</span>
+            <span class="s1">print(</span><span class="s3">&quot;Failed to grab frame from camera. Exiting...&quot;</span><span class="s1">)</span>
+            <span class="s2">return None</span>
+        <span class="s2">return </span><span class="s1">cv2.resize(cam_frame</span><span class="s2">, </span><span class="s1">self.resolution)</span>
+
+    <span class="s2">def </span><span class="s1">combine_frames(self</span><span class="s2">, </span><span class="s1">screen_np</span><span class="s2">, </span><span class="s1">cam_frame):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Combines the screen and camera frames horizontally. 
+ 
+        Args: 
+            screen_np (numpy.ndarray): The captured screen frame. 
+            cam_frame (numpy.ndarray): The captured camera frame. 
+ 
+        Returns: 
+            numpy.ndarray: An array representing the combined frame. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">return </span><span class="s1">np.hstack((cam_frame</span><span class="s2">, </span><span class="s1">screen_np))</span>
+</pre>
+</body>
+</html>

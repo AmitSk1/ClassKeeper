@@ -1,0 +1,93 @@
+<html>
+<head>
+<title>my_pep8.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6897bb;}
+.s4 { color: #6a8759;}
+.s5 { color: #808080;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+my_pep8.py</font>
+</center></td></tr></table>
+<pre><span class="s0">&quot;&quot;&quot; 
+    Auto tester 
+    Author: Ayelet Mashiah 
+ 
+    a file managing automatic tests for student exercises 
+&quot;&quot;&quot;</span>
+<span class="s2">import </span><span class="s1">pep8</span>
+<span class="s2">import </span><span class="s1">os</span>
+<span class="s2">import </span><span class="s1">sys</span>
+<span class="s2">import </span><span class="s1">glob</span>
+
+
+<span class="s2">def </span><span class="s1">test_pep8(folder</span><span class="s2">, </span><span class="s1">files):</span>
+    <span class="s0">&quot;&quot;&quot; 
+    runs pep8 test using pep8 library 
+    &quot;&quot;&quot;</span>
+    <span class="s1">tst_f_name = os.path.basename(sys.argv[</span><span class="s3">0</span><span class="s1">])</span>
+    <span class="s1">files.remove(</span><span class="s4">&quot;.</span><span class="s2">\\</span><span class="s4">&quot; </span><span class="s1">+ tst_f_name)</span>
+    <span class="s1">print(</span><span class="s4">&quot;tested files&quot;</span><span class="s2">, </span><span class="s1">files)</span>
+    <span class="s1">checker = pep8.StyleGuide()</span>
+    <span class="s1">checker.check_files(files)</span>
+
+
+<span class="s2">def </span><span class="s1">list_files(folder):</span>
+    <span class="s0">&quot;&quot;&quot; 
+    returns a list of all python files in 
+    folder and its sub-folder 
+    &quot;&quot;&quot;</span>
+    <span class="s5"># lst = []</span>
+    <span class="s5"># for root, dirs, files in os.walk(folder, topdown=False):</span>
+    <span class="s5">#     for name in files:</span>
+    <span class="s5">#         ext = os.path.splitext(name)[-1]</span>
+    <span class="s5">#         if ext == &quot;.py&quot; or ext == &quot;.pyw&quot;:</span>
+    <span class="s5">#             lst.append(os.path.join(root, name))</span>
+    <span class="s1">lst = glob.glob(</span><span class="s4">&quot;.</span><span class="s2">\\</span><span class="s4">*.py&quot;</span><span class="s1">)</span>
+
+    <span class="s2">return </span><span class="s1">lst</span>
+
+
+<span class="s2">def </span><span class="s1">test_folder(folder_name):</span>
+    <span class="s0">&quot;&quot;&quot; 
+    inputs: 
+        - folder to be tested 
+    1 - generates a list of full paths of the fiven folder 
+    2 - runs pep8 tests on the given list files 
+    3 - output results to stdout 
+    &quot;&quot;&quot;</span>
+    <span class="s1">new_tested_files = list_files(folder_name)</span>
+    <span class="s1">test_pep8(folder_name</span><span class="s2">, </span><span class="s1">new_tested_files)</span>
+
+
+<span class="s2">def </span><span class="s1">main():</span>
+    <span class="s0">&quot;&quot;&quot; 
+    goes over students folders 
+    for each folder it tests: 
+        - requested method 
+        - pep8 
+        - documentation 
+ 
+    given parameters:` 
+        1 - root folder of all students sub folders 
+        2 - code testing file name 
+        3 - name of file to test 
+ 
+    TBD - if not all files should be run 
+    &quot;&quot;&quot;</span>
+    <span class="s1">test_folder(</span><span class="s4">&quot;.&quot;</span><span class="s1">)</span>
+
+
+<span class="s2">if </span><span class="s1">__name__ == </span><span class="s4">'__main__'</span><span class="s1">:</span>
+    <span class="s1">main()</span>
+</pre>
+</body>
+</html>

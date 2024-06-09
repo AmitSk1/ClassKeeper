@@ -1,0 +1,325 @@
+<html>
+<head>
+<title>teacher_gui.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6897bb;}
+.s4 { color: #6a8759;}
+.s5 { color: #808080;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+teacher_gui.py</font>
+</center></td></tr></table>
+<pre><span class="s0">&quot;&quot;&quot; 
+Server GUI 
+Amit Skarbin 
+ 
+GUI for the teacher to monitor video streams from students. 
+&quot;&quot;&quot;</span>
+
+<span class="s2">import </span><span class="s1">os</span>
+<span class="s2">import </span><span class="s1">shutil</span>
+<span class="s2">import </span><span class="s1">threading</span>
+<span class="s2">import </span><span class="s1">tkinter </span><span class="s2">as </span><span class="s1">tk</span>
+<span class="s2">from </span><span class="s1">tkinter </span><span class="s2">import </span><span class="s1">Label</span><span class="s2">, </span><span class="s1">messagebox</span><span class="s2">, </span><span class="s1">filedialog</span><span class="s2">, </span><span class="s1">Toplevel</span><span class="s2">, </span><span class="s1">ttk</span>
+<span class="s2">from </span><span class="s1">PIL </span><span class="s2">import </span><span class="s1">Image</span><span class="s2">, </span><span class="s1">ImageTk</span>
+<span class="s2">import </span><span class="s1">math</span>
+<span class="s2">from </span><span class="s1">Server_Modules.server </span><span class="s2">import </span><span class="s1">Server</span>
+<span class="s2">import </span><span class="s1">cv2</span>
+
+
+<span class="s2">class </span><span class="s1">ServerGUI:</span>
+    <span class="s0">&quot;&quot;&quot; 
+    GUI class for the server application. 
+ 
+    This class creates a graphical user interface for the server to control 
+    and monitor video streaming from clients. 
+    &quot;&quot;&quot;</span>
+
+    <span class="s2">def </span><span class="s1">__init__(self</span><span class="s2">, </span><span class="s1">host</span><span class="s2">, </span><span class="s1">port</span><span class="s2">, </span><span class="s1">resolution=(</span><span class="s3">640</span><span class="s2">, </span><span class="s3">480</span><span class="s1">)):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Initializes the server GUI with the server and display settings. 
+ 
+        Args: 
+            host (str): The server's hostname or IP address. 
+            port (int): The port number on which the server is listening. 
+            resolution (tuple): The resolution for displaying video streams. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.server = Server(host</span><span class="s2">, </span><span class="s1">port</span><span class="s2">, </span><span class="s1">self.new_frame_received)</span>
+        <span class="s1">self.window = tk.Tk()</span>
+        <span class="s1">self.window.title(</span><span class="s4">&quot;Teacher's Dashboard&quot;</span><span class="s1">)</span>
+        <span class="s1">self.resolution = resolution</span>
+        <span class="s1">self.aspect_ratio = resolution[</span><span class="s3">1</span><span class="s1">] / resolution[</span><span class="s3">0</span><span class="s1">]</span>
+        <span class="s1">self.student_frames = {}</span>
+        <span class="s1">self.filename = </span><span class="s2">None</span>
+        <span class="s1">self.fullscreen_student_id = </span><span class="s2">None</span>
+        <span class="s1">self.setup_gui()</span>
+
+    <span class="s2">def </span><span class="s1">setup_gui(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Sets up the initial graphical user interface for the server. 
+        &quot;&quot;&quot;</span>
+        <span class="s5"># Styling</span>
+        <span class="s1">style = ttk.Style()</span>
+        <span class="s1">style.configure(</span><span class="s4">'TButton'</span><span class="s2">, </span><span class="s1">font=(</span><span class="s4">'Arial'</span><span class="s2">, </span><span class="s3">10</span><span class="s1">)</span><span class="s2">, </span><span class="s1">padding=</span><span class="s3">10</span><span class="s1">)</span>
+        <span class="s1">style.configure(</span><span class="s4">'TLabel'</span><span class="s2">, </span><span class="s1">font=(</span><span class="s4">'Arial'</span><span class="s2">, </span><span class="s3">12</span><span class="s1">)</span><span class="s2">, </span><span class="s1">padding=</span><span class="s3">5</span><span class="s1">)</span>
+
+        <span class="s5"># Main layout frame</span>
+        <span class="s1">self.streams_frame = ttk.Frame(self.window</span><span class="s2">, </span><span class="s1">padding=</span><span class="s4">&quot;30 30 30 30&quot;</span><span class="s1">)</span>
+        <span class="s1">self.streams_frame.pack(fill=tk.BOTH</span><span class="s2">, </span><span class="s1">expand=</span><span class="s2">True</span><span class="s1">)</span>
+        <span class="s1">self.streams_frame.columnconfigure(</span><span class="s3">0</span><span class="s2">, </span><span class="s1">weight=</span><span class="s3">1</span><span class="s1">)</span>
+        <span class="s1">self.streams_frame.rowconfigure(</span><span class="s3">0</span><span class="s2">, </span><span class="s1">weight=</span><span class="s3">1</span><span class="s1">)</span>
+
+        <span class="s5"># Load the logo image and display it</span>
+        <span class="s1">logo_image = Image.open(</span>
+            <span class="s4">&quot;background.png&quot;</span><span class="s1">)</span>
+        <span class="s1">logo_photo = ImageTk.PhotoImage(logo_image)</span>
+        <span class="s1">self.logo_label = ttk.Label(self.streams_frame</span><span class="s2">, </span><span class="s1">image=logo_photo)</span>
+        <span class="s1">self.logo_label.image = logo_photo  </span><span class="s5"># Keep a reference</span>
+        <span class="s1">self.logo_label.pack(side=tk.TOP</span><span class="s2">, </span><span class="s1">pady=</span><span class="s3">10</span><span class="s1">)</span>
+
+        <span class="s5"># Initialize the placeholder message</span>
+        <span class="s1">self.placeholder_label = ttk.Label(self.streams_frame</span><span class="s2">,</span>
+                                           <span class="s1">text=</span><span class="s4">&quot;Waiting for students &quot;</span>
+                                                <span class="s4">&quot;to connect&quot;</span><span class="s2">,</span>
+                                           <span class="s1">font=(</span><span class="s4">'Arial'</span><span class="s2">, </span><span class="s3">16</span><span class="s1">))</span>
+        <span class="s1">self.placeholder_label.pack(fill=tk.BOTH</span><span class="s2">, </span><span class="s1">expand=</span><span class="s2">True</span><span class="s1">)</span>
+
+        <span class="s5"># Window properties</span>
+        <span class="s1">self.window.protocol(</span><span class="s4">&quot;WM_DELETE_WINDOW&quot;</span><span class="s2">, </span><span class="s1">self.on_closing)</span>
+        <span class="s1">self.window.bind(</span><span class="s4">'&lt;Configure&gt;'</span><span class="s2">, </span><span class="s1">self.on_window_resize)</span>
+        <span class="s1">self.window.resizable(</span><span class="s2">True, True</span><span class="s1">)</span>
+
+        <span class="s5"># Control Panel</span>
+        <span class="s1">self.open_control_panel()</span>
+
+        <span class="s5"># Start server</span>
+        <span class="s1">self.start_server()</span>
+
+    <span class="s2">def </span><span class="s1">on_window_resize(self</span><span class="s2">, </span><span class="s1">event=</span><span class="s2">None</span><span class="s1">):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Responds to the window resize event to update the layout 
+        of video streams. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.update_layout()</span>
+
+    <span class="s2">def </span><span class="s1">open_control_panel(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Opens the control panel for additional functionalities. 
+        &quot;&quot;&quot;</span>
+        <span class="s5"># Control panel design</span>
+        <span class="s1">self.control_panel = Toplevel(self.window)</span>
+        <span class="s1">self.control_panel.title(</span><span class="s4">&quot;Control Panel&quot;</span><span class="s1">)</span>
+        <span class="s1">self.control_panel.resizable(</span><span class="s2">False, False</span><span class="s1">)</span>
+
+        <span class="s5"># Frame to contain the buttons with padding</span>
+        <span class="s1">control_frame = ttk.Frame(self.control_panel</span><span class="s2">, </span><span class="s1">padding=</span><span class="s4">&quot;10 10 10 10&quot;</span><span class="s1">)</span>
+        <span class="s1">control_frame.pack(fill=tk.BOTH</span><span class="s2">, </span><span class="s1">expand=</span><span class="s2">True</span><span class="s1">)</span>
+
+        <span class="s1">ttk.Button(control_frame</span><span class="s2">, </span><span class="s1">text=</span><span class="s4">&quot;Upload File&quot;</span><span class="s2">,</span>
+                   <span class="s1">command=self.upload_file).pack(pady=</span><span class="s3">5</span><span class="s1">)</span>
+        <span class="s1">ttk.Button(control_frame</span><span class="s2">, </span><span class="s1">text=</span><span class="s4">&quot;Download All Files&quot;</span><span class="s2">,</span>
+                   <span class="s1">command=self.download_all_files).pack(pady=</span><span class="s3">5</span><span class="s1">)</span>
+        <span class="s1">ttk.Button(control_frame</span><span class="s2">, </span><span class="s1">text=</span><span class="s4">&quot;Finish test&quot;</span><span class="s2">,</span>
+                   <span class="s1">command=self.finish_test).pack(pady=</span><span class="s3">5</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">upload_file(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Opens a file dialog to select a file to upload. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">file_path = filedialog.askopenfilename()</span>
+        <span class="s1">self.filename = os.path.basename(file_path)</span>
+        <span class="s1">print(self.filename)</span>
+        <span class="s1">self.server.file_management_module.upload_file(file_path)</span>
+        <span class="s1">messagebox.showinfo(</span><span class="s4">&quot;Upload&quot;</span><span class="s2">, </span><span class="s4">&quot;File upload started.&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">finish_test(self):</span>
+        <span class="s1">print(</span><span class="s4">&quot;finish test, sending notification for clients&quot;</span><span class="s1">)</span>
+        <span class="s1">self.server.network_module.notify_clients_test_over()</span>
+
+    <span class="s2">def </span><span class="s1">download_all_files(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Moves all files from 'C:\\client_files' to 'C:/test/' 
+        with a filename prefix. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">source_directory = </span><span class="s4">&quot;C:</span><span class="s2">\\</span><span class="s4">client_files&quot;</span>
+        <span class="s1">destination_directory = </span><span class="s4">f&quot;C:/test/</span><span class="s2">{</span><span class="s1">self.filename</span><span class="s2">}</span><span class="s4">&quot;</span>
+        <span class="s2">if not </span><span class="s1">os.path.exists(destination_directory):</span>
+            <span class="s1">os.makedirs(destination_directory)</span>
+        <span class="s2">for </span><span class="s1">file_name </span><span class="s2">in </span><span class="s1">os.listdir(source_directory):</span>
+            <span class="s1">source_file = os.path.join(source_directory</span><span class="s2">, </span><span class="s1">file_name)</span>
+            <span class="s1">destination_file = os.path.join(destination_directory</span><span class="s2">, </span><span class="s1">file_name)</span>
+            <span class="s1">shutil.move(source_file</span><span class="s2">, </span><span class="s1">destination_file)</span>
+        <span class="s1">messagebox.showinfo(</span><span class="s4">&quot;Download Complete&quot;</span><span class="s2">,</span>
+                            <span class="s4">f&quot;File saved to </span><span class="s2">{</span><span class="s1">destination_directory</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">start_server(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Starts the streaming server in a separate thread. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">threading.Thread(target=self.server.start_server</span><span class="s2">, </span><span class="s1">daemon=</span><span class="s2">True</span><span class="s1">).start()</span>
+        <span class="s1">messagebox.showinfo(</span><span class="s4">&quot;Server&quot;</span><span class="s2">, </span><span class="s4">&quot;Streaming server started.&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">add_student_stream(self</span><span class="s2">, </span><span class="s1">student_id):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Adds a new student stream to the GUI. 
+        &quot;&quot;&quot;</span>
+        <span class="s5"># Hide the placeholder message when a student connects</span>
+        <span class="s1">self.placeholder_label.pack_forget()</span>
+        <span class="s1">self.logo_label.pack_forget()</span>
+        <span class="s1">frame_label = Label(self.streams_frame)</span>
+        <span class="s1">frame_label.bind(</span><span class="s4">'&lt;Double-Button-1&gt;'</span><span class="s2">,</span>
+                         <span class="s2">lambda </span><span class="s1">e</span><span class="s2">, </span><span class="s1">sid=student_id: self.toggle_fullscreen(sid))</span>
+        <span class="s1">frame_label.grid(row=</span><span class="s3">999</span><span class="s2">, </span><span class="s1">column=</span><span class="s3">999</span><span class="s1">)  </span><span class="s5"># Initially place out of view</span>
+        <span class="s1">self.student_frames[student_id] = frame_label</span>
+        <span class="s1">self.update_layout()</span>
+
+    <span class="s2">def </span><span class="s1">toggle_fullscreen(self</span><span class="s2">, </span><span class="s1">student_id):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Toggles the fullscreen mode for a selected student stream. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if </span><span class="s1">self.fullscreen_student_id:  </span><span class="s5"># If already in fullscreen, minimize</span>
+            <span class="s1">self.fullscreen_student_id = </span><span class="s2">None</span>
+            <span class="s1">self.window.attributes(</span><span class="s4">'-fullscreen'</span><span class="s2">, False</span><span class="s1">)</span>
+            <span class="s1">self.update_layout()</span>
+        <span class="s2">else</span><span class="s1">:  </span><span class="s5"># If not in fullscreen, maximize this student's stream</span>
+            <span class="s1">self.fullscreen_student_id = student_id</span>
+            <span class="s1">self.maximize_student_stream(student_id)</span>
+
+    <span class="s2">def </span><span class="s1">maximize_student_stream(self</span><span class="s2">, </span><span class="s1">student_id):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Maximizes the stream of a selected student to fill the entire window. 
+ 
+        Args: 
+            student_id (str): The unique identifier of the student. 
+        &quot;&quot;&quot;</span>
+        <span class="s5"># Hide all frames</span>
+        <span class="s2">for </span><span class="s1">sid</span><span class="s2">, </span><span class="s1">frame_label </span><span class="s2">in </span><span class="s1">self.student_frames.items():</span>
+            <span class="s1">frame_label.grid_forget()</span>
+
+        <span class="s5"># Show only the selected student's</span>
+        <span class="s5"># frame and expand it to fill the window</span>
+        <span class="s1">frame_label = self.student_frames[student_id]</span>
+        <span class="s1">frame_label.grid(row=</span><span class="s3">0</span><span class="s2">, </span><span class="s1">column=</span><span class="s3">0</span><span class="s2">, </span><span class="s1">sticky=</span><span class="s4">'nsew'</span><span class="s1">)</span>
+
+        <span class="s5"># Adjust grid configuration to occupy the entire window</span>
+        <span class="s1">self.streams_frame.grid_rowconfigure(</span><span class="s3">0</span><span class="s2">, </span><span class="s1">weight=</span><span class="s3">1</span><span class="s1">)</span>
+        <span class="s1">self.streams_frame.grid_columnconfigure(</span><span class="s3">0</span><span class="s2">, </span><span class="s1">weight=</span><span class="s3">1</span><span class="s1">)</span>
+
+        <span class="s5"># Update the window layout immediately</span>
+        <span class="s1">self.streams_frame.update_idletasks()</span>
+
+        <span class="s5"># Calculate the dimensions to resize the video frame</span>
+        <span class="s1">window_width = self.streams_frame.winfo_width()</span>
+        <span class="s1">window_height = self.streams_frame.winfo_height()</span>
+
+        <span class="s5"># Set the size of the frame label to the window size</span>
+        <span class="s1">frame_label.config(width=window_width</span><span class="s2">, </span><span class="s1">height=window_height)</span>
+
+    <span class="s2">def </span><span class="s1">new_frame_received(self</span><span class="s2">, </span><span class="s1">client_address</span><span class="s2">, </span><span class="s1">frame</span><span class="s2">, </span><span class="s1">username):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Handles new frames received from clients. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">student_id = </span><span class="s4">f&quot;</span><span class="s2">{</span><span class="s1">client_address[</span><span class="s3">0</span><span class="s1">]</span><span class="s2">}</span><span class="s4">:</span><span class="s2">{</span><span class="s1">client_address[</span><span class="s3">1</span><span class="s1">]</span><span class="s2">}</span><span class="s4">&quot;</span>
+        <span class="s2">if </span><span class="s1">frame </span><span class="s2">is None</span><span class="s1">:</span>
+            <span class="s1">self.remove_student_stream(student_id)</span>
+            <span class="s2">if </span><span class="s1">self.fullscreen_student_id == student_id:</span>
+                <span class="s1">self.fullscreen_student_id = </span><span class="s2">None</span>
+                <span class="s1">self.window.attributes(</span><span class="s4">'-fullscreen'</span><span class="s2">, False</span><span class="s1">)</span>
+        <span class="s2">else</span><span class="s1">:</span>
+            <span class="s1">self.window.after(</span><span class="s3">0</span><span class="s2">, </span><span class="s1">self.update_video_display</span><span class="s2">,</span>
+                              <span class="s1">student_id</span><span class="s2">, </span><span class="s1">frame</span><span class="s2">, </span><span class="s1">username)</span>
+
+    <span class="s2">def </span><span class="s1">remove_student_stream(self</span><span class="s2">, </span><span class="s1">student_id):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Removes a student's stream from the GUI. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if </span><span class="s1">student_id </span><span class="s2">in </span><span class="s1">self.student_frames:</span>
+            <span class="s1">frame_label = self.student_frames[student_id]</span>
+            <span class="s1">frame_label.grid_forget()</span>
+            <span class="s1">frame_label.destroy()</span>
+            <span class="s2">del </span><span class="s1">self.student_frames[student_id]</span>
+            <span class="s1">self.update_layout()</span>
+        <span class="s2">if not </span><span class="s1">self.student_frames:</span>
+            <span class="s1">self.placeholder_label.pack(fill=tk.BOTH</span><span class="s2">, </span><span class="s1">expand=</span><span class="s2">True</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">update_video_display(self</span><span class="s2">, </span><span class="s1">student_id</span><span class="s2">, </span><span class="s1">frame</span><span class="s2">, </span><span class="s1">username):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Updates the video display with a new frame from a student. 
+        &quot;&quot;&quot;</span>
+        <span class="s5"># Check if the frame is not None and the</span>
+        <span class="s5"># student_id is in student_frames</span>
+        <span class="s2">if </span><span class="s1">frame </span><span class="s2">is not None and </span><span class="s1">student_id </span><span class="s2">in </span><span class="s1">self.student_frames:</span>
+            <span class="s5"># Resize the frame if the student is in fullscreen mode</span>
+            <span class="s2">if </span><span class="s1">self.fullscreen_student_id == student_id:</span>
+                <span class="s1">frame = cv2.resize(frame</span><span class="s2">, </span><span class="s1">(self.streams_frame.winfo_width()</span><span class="s2">,</span>
+                                           <span class="s1">self.streams_frame.winfo_height()))</span>
+
+        <span class="s2">if </span><span class="s1">frame </span><span class="s2">is not None</span><span class="s1">:</span>
+            <span class="s1">cv2.putText(frame</span><span class="s2">, </span><span class="s1">username</span><span class="s2">, </span><span class="s1">(</span><span class="s3">10</span><span class="s2">, </span><span class="s3">20</span><span class="s1">)</span><span class="s2">,</span>
+                        <span class="s1">cv2.FONT_HERSHEY_SIMPLEX</span><span class="s2">, </span><span class="s3">0.6</span><span class="s2">, </span><span class="s1">(</span><span class="s3">255</span><span class="s2">, </span><span class="s3">255</span><span class="s2">, </span><span class="s3">255</span><span class="s1">)</span><span class="s2">, </span><span class="s3">2</span><span class="s1">)</span>
+            <span class="s1">frame = cv2.cvtColor(frame</span><span class="s2">, </span><span class="s1">cv2.COLOR_BGR2RGB)</span>
+            <span class="s1">frame_image = Image.fromarray(frame)</span>
+            <span class="s1">frame_photo = ImageTk.PhotoImage(image=frame_image)</span>
+
+            <span class="s2">if </span><span class="s1">student_id </span><span class="s2">not in </span><span class="s1">self.student_frames:</span>
+                <span class="s1">self.add_student_stream(student_id)</span>
+
+            <span class="s1">self.student_frames[student_id].configure(image=frame_photo)</span>
+            <span class="s1">self.student_frames[student_id].image = frame_photo</span>
+
+    <span class="s2">def </span><span class="s1">update_layout(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Updates the layout of the video streams in the GUI. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if </span><span class="s1">self.fullscreen_student_id:</span>
+            <span class="s1">self.maximize_student_stream(self.fullscreen_student_id)</span>
+            <span class="s2">return</span>
+
+        <span class="s1">num_students = len(self.student_frames)</span>
+        <span class="s2">if </span><span class="s1">num_students == </span><span class="s3">0</span><span class="s1">:</span>
+            <span class="s2">return</span>
+
+        <span class="s1">window_width = self.streams_frame.winfo_width()</span>
+        <span class="s1">window_height = self.streams_frame.winfo_height()</span>
+        <span class="s1">cols = int(math.sqrt(num_students))</span>
+        <span class="s1">rows = math.ceil(num_students / cols)</span>
+        <span class="s1">frame_width = window_width // cols</span>
+        <span class="s1">frame_height = window_height // rows</span>
+
+        <span class="s2">for </span><span class="s1">i</span><span class="s2">, </span><span class="s1">(student_id</span><span class="s2">, </span><span class="s1">frame_label) </span><span class="s2">in </span><span class="s1">\</span>
+                <span class="s1">enumerate(sorted(self.student_frames.items())):</span>
+            <span class="s1">row = i // cols</span>
+            <span class="s1">col = i % cols</span>
+            <span class="s1">frame_label.grid(row=row</span><span class="s2">, </span><span class="s1">column=col</span><span class="s2">, </span><span class="s1">sticky=</span><span class="s4">'nsew'</span><span class="s1">)</span>
+            <span class="s1">frame_label.config(width=frame_width</span><span class="s2">, </span><span class="s1">height=frame_height)</span>
+
+    <span class="s2">def </span><span class="s1">on_closing(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Handles the closing event of the GUI window. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if </span><span class="s1">messagebox.askokcancel(</span><span class="s4">&quot;Quit&quot;</span><span class="s2">, </span><span class="s4">&quot;Do you want to &quot;</span>
+                                          <span class="s4">&quot;shut down the server?&quot;</span><span class="s1">):</span>
+            <span class="s1">self.server.stop_server()</span>
+            <span class="s1">self.window.destroy()</span>
+
+    <span class="s2">def </span><span class="s1">run(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Runs the main loop of the GUI. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.window.mainloop()</span>
+
+
+<span class="s2">if </span><span class="s1">__name__ == </span><span class="s4">&quot;__main__&quot;</span><span class="s1">:</span>
+    <span class="s1">gui = ServerGUI(</span><span class="s4">'127.0.0.1'</span><span class="s2">, </span><span class="s3">1278</span><span class="s1">)</span>
+    <span class="s1">gui.run()</span>
+</pre>
+</body>
+</html>

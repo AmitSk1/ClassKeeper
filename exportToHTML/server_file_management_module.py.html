@@ -1,0 +1,89 @@
+<html>
+<head>
+<title>server_file_management_module.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+server_file_management_module.py</font>
+</center></td></tr></table>
+<pre><span class="s0">&quot;&quot;&quot; 
+Server for file management 
+Amit Skarbin 
+&quot;&quot;&quot;</span>
+
+<span class="s2">import </span><span class="s1">os</span>
+
+<span class="s2">from </span><span class="s1">Protocols.file_protocol </span><span class="s2">import </span><span class="s1">FileProtocol</span>
+<span class="s2">from </span><span class="s1">Protocols.protocol </span><span class="s2">import </span><span class="s1">Protocol</span>
+
+
+
+<span class="s2">class </span><span class="s1">ServerFileManagementModule:</span>
+    <span class="s0">&quot;&quot;&quot; 
+    Manages file operations for the server. 
+ 
+    This module handles tasks related to file storage and retrieval, including 
+    storing files received from clients and sending files to clients. 
+ 
+    Attributes: 
+        last_uploaded_file (str): The path of the last file uploaded 
+        by a client. 
+    &quot;&quot;&quot;</span>
+
+    <span class="s2">def </span><span class="s1">__init__(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Initializes the ServerFileManagementModule. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.last_uploaded_file = </span><span class="s2">None</span>
+
+    <span class="s2">def </span><span class="s1">store_client_file(self</span><span class="s2">, </span><span class="s1">client_socket):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Stores a file received from a client. 
+ 
+        Args: 
+            client_socket (socket.socket): The client socket from which to 
+            receive the file. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">directory = </span><span class="s3">&quot;C:/client_files&quot;</span>
+        <span class="s2">if not </span><span class="s1">os.path.exists(directory):</span>
+            <span class="s1">os.makedirs(directory)</span>
+        <span class="s1">FileProtocol.recv_file(client_socket</span><span class="s2">, </span><span class="s1">directory)</span>
+        <span class="s1">print(</span><span class="s3">&quot;File stored successfully in &quot; </span><span class="s1">+ directory)</span>
+
+    <span class="s2">def </span><span class="s1">send_stored_file(self</span><span class="s2">, </span><span class="s1">client_socket):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Sends the last uploaded file to a client. 
+ 
+        Args: 
+            client_socket (socket.socket): The client socket to which to send 
+            the file. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if </span><span class="s1">self.last_uploaded_file:</span>
+            <span class="s1">Protocol.send(client_socket</span><span class="s2">, </span><span class="s3">&quot;FILE&quot;</span><span class="s1">)</span>
+            <span class="s1">FileProtocol.send_file(client_socket</span><span class="s2">, </span><span class="s1">self.last_uploaded_file)</span>
+        <span class="s2">else</span><span class="s1">:</span>
+            <span class="s1">Protocol.send(client_socket</span><span class="s2">, </span><span class="s3">&quot;NO_FILE&quot;</span><span class="s1">)</span>
+            <span class="s1">print(</span><span class="s3">&quot;No file has been uploaded yet.&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">upload_file(self</span><span class="s2">, </span><span class="s1">file_path):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Updates the path of the last uploaded file. 
+ 
+        Args: 
+            file_path (str): The path of the file to be considered as the last 
+            uploaded. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.last_uploaded_file = file_path</span>
+        <span class="s1">print(</span><span class="s3">&quot;Uploading file &quot; </span><span class="s1">+ file_path)</span>
+</pre>
+</body>
+</html>

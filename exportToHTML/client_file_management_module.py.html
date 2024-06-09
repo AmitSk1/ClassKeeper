@@ -1,0 +1,93 @@
+<html>
+<head>
+<title>client_file_management_module.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+client_file_management_module.py</font>
+</center></td></tr></table>
+<pre><span class="s0">&quot;&quot;&quot; 
+client for file management 
+Amit Skarbin 
+&quot;&quot;&quot;</span>
+
+<span class="s2">import </span><span class="s1">os</span>
+<span class="s2">from </span><span class="s1">Protocols.protocol </span><span class="s2">import </span><span class="s1">Protocol</span>
+<span class="s2">from </span><span class="s1">Protocols.file_protocol </span><span class="s2">import </span><span class="s1">FileProtocol</span>
+
+
+<span class="s2">class </span><span class="s1">ClientFileManagementModule:</span>
+    <span class="s0">&quot;&quot;&quot; 
+    Manages file operations for the streaming client. 
+ 
+    This module handles file-related tasks such as uploading files to the 
+    server requesting and receiving files from the server. 
+ 
+    Attributes: 
+        file_socket (socket.socket): Socket used for file-related communication 
+    &quot;&quot;&quot;</span>
+
+    <span class="s2">def </span><span class="s1">__init__(self</span><span class="s2">, </span><span class="s1">file_socket):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Initializes the ClientFileManagementModule with a file socket. 
+ 
+        Args: 
+            file_socket (socket.socket): The socket used for file operations. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.file_socket = file_socket</span>
+
+    <span class="s2">def </span><span class="s1">request_last_file(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Requests the last uploaded file from the server. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">try</span><span class="s1">:</span>
+            <span class="s1">Protocol.send(self.file_socket</span><span class="s2">, </span><span class="s3">&quot;REQUEST_LAST_FILE&quot;</span><span class="s1">)</span>
+        <span class="s2">except </span><span class="s1">Exception </span><span class="s2">as </span><span class="s1">e:</span>
+            <span class="s1">print(</span><span class="s3">f&quot;Error requesting file: </span><span class="s2">{</span><span class="s1">e</span><span class="s2">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">check_if_file_upload(self):</span>
+        <span class="s1">response = Protocol.recv(self.file_socket)</span>
+        <span class="s2">if </span><span class="s1">response == </span><span class="s3">&quot;NO_FILE&quot;</span><span class="s1">:</span>
+            <span class="s1">print(</span><span class="s3">&quot;no file available for download&quot;</span><span class="s1">)</span>
+            <span class="s2">return False</span>
+        <span class="s2">else</span><span class="s1">:</span>
+            <span class="s2">return True</span>
+
+    <span class="s2">def </span><span class="s1">receive_file_from_server(self</span><span class="s2">, </span><span class="s1">directory):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Receives a file from the server and saves it to the specified directory 
+ 
+        Args: 
+            directory (str): The directory where the file will be saved. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">FileProtocol.recv_file(self.file_socket</span><span class="s2">, </span><span class="s1">directory)</span>
+        <span class="s1">print(</span><span class="s3">f&quot;File received and saved to </span><span class="s2">{</span><span class="s1">directory</span><span class="s2">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">upload_file(self</span><span class="s2">, </span><span class="s1">file_path</span><span class="s2">, </span><span class="s1">username):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Uploads a selected file to the server. 
+ 
+        Args: 
+            file_path (str): The path of the file to upload. 
+            username (str): The username of the client uploading the file. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">try</span><span class="s1">:</span>
+            <span class="s1">directory</span><span class="s2">, </span><span class="s1">base_name = os.path.split(file_path)</span>
+            <span class="s1">new_file_name = os.path.join(directory</span><span class="s2">, </span><span class="s1">username + </span><span class="s3">&quot;_&quot; </span><span class="s1">+ base_name)</span>
+            <span class="s1">os.rename(file_path</span><span class="s2">, </span><span class="s1">new_file_name)</span>
+            <span class="s1">Protocol.send(self.file_socket</span><span class="s2">, </span><span class="s3">&quot;UPLOAD_FILE&quot;</span><span class="s1">)</span>
+            <span class="s1">FileProtocol.send_file(self.file_socket</span><span class="s2">, </span><span class="s1">new_file_name)</span>
+        <span class="s2">except </span><span class="s1">Exception </span><span class="s2">as </span><span class="s1">e:</span>
+            <span class="s1">print(</span><span class="s3">f&quot;Error uploading file: </span><span class="s2">{</span><span class="s1">e</span><span class="s2">}</span><span class="s3">&quot;</span><span class="s1">)</span>
+</pre>
+</body>
+</html>

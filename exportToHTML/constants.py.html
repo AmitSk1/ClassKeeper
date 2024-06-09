@@ -1,0 +1,39 @@
+<html>
+<head>
+<title>constants.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6897bb;}
+.s3 { color: #808080;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+constants.py</font>
+</center></td></tr></table>
+<pre><span class="s0">&quot;&quot;&quot; 
+Constants 
+Amit Skarbin 
+&quot;&quot;&quot;</span>
+
+<span class="s1">CHUNK_SIZE = </span><span class="s2">4096  </span><span class="s3"># bytes</span>
+
+<span class="s3"># Constants for the client</span>
+<span class="s1">FPS = </span><span class="s2">10</span>
+<span class="s1">RESOLUTION_VERTICAL = </span><span class="s2">320</span>
+<span class="s1">RESOLUTION_HORIZONTAL = </span><span class="s2">240</span>
+<span class="s1">CAPTURE_DEVICE_INDEX = </span><span class="s2">0  </span><span class="s3"># Index of the camera capture device</span>
+<span class="s1">JPEG_COMPRESSION_QUALITY = </span><span class="s2">50  </span><span class="s3"># Compression quality for JPEG images</span>
+<span class="s1">PICKLE_PROTOCOL_VERSION = </span><span class="s2">4  </span><span class="s3"># Protocol version for pickle</span>
+<span class="s3"># Time to wait between frames, calculated from FPS</span>
+<span class="s1">WAIT_TIME_PER_FRAME = int(</span><span class="s2">1000 </span><span class="s1">/ FPS)</span>
+
+<span class="s3"># Constants for the server</span>
+<span class="s1">FRAME_DECODE_COLOR_MODE = cv2.IMREAD_COLOR  </span><span class="s3"># Color mode for frame decoding</span>
+</pre>
+</body>
+</html>

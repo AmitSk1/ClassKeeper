@@ -1,0 +1,117 @@
+<html>
+<head>
+<title>protocol.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6897bb;}
+.s3 { color: #808080;}
+.s4 { color: #cc7832;}
+.s5 { color: #a5c261;}
+.s6 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+protocol.py</font>
+</center></td></tr></table>
+<pre><span class="s0">&quot;&quot;&quot; 
+Amit skarbin 
+&quot;&quot;&quot;</span>
+<span class="s1">SIZE_TO_FILL = </span><span class="s2">15</span>
+<span class="s1">MIN_SIZE = </span><span class="s2">0</span>
+<span class="s1">CHUNK_SIZE = </span><span class="s2">4096  </span><span class="s3"># Define a reasonable chunk size</span>
+
+
+<span class="s4">class </span><span class="s1">Protocol:</span>
+
+
+    <span class="s1">@staticmethod</span>
+    <span class="s4">def </span><span class="s1">send(socket</span><span class="s4">, </span><span class="s1">data):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Send data over a socket with a fixed-size header indicating 
+        the data length 
+ 
+        Args: 
+            socket (socket.socket): The socket over which to send the data. 
+            data (str): The data to send. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">encoded_msg = data.encode()</span>
+        <span class="s1">length_str = str(len(encoded_msg)).zfill(SIZE_TO_FILL)</span>
+        <span class="s1">length_bytes = length_str.encode()</span>
+        <span class="s1">socket.send(length_bytes + encoded_msg)</span>
+
+    <span class="s1">@staticmethod</span>
+    <span class="s4">def </span><span class="s1">recv(sock):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Receive data over a socket with a fixed-size header indicating the 
+        data length. 
+ 
+        Args: 
+            sock (socket.socket): The socket from which to receive the data. 
+ 
+        Returns: 
+            str: The received data. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">total_size = </span><span class="s5">b&quot;&quot;</span>
+        <span class="s1">size = SIZE_TO_FILL</span>
+        <span class="s4">while </span><span class="s1">size &gt; MIN_SIZE:</span>
+            <span class="s1">data = sock.recv(size)</span>
+            <span class="s1">size -= len(data)</span>
+            <span class="s1">total_size += data</span>
+        <span class="s1">size = int(total_size.decode())</span>
+        <span class="s1">total_data = </span><span class="s5">b&quot;&quot;</span>
+        <span class="s4">while </span><span class="s1">size &gt; MIN_SIZE:</span>
+            <span class="s1">data = sock.recv(size)</span>
+            <span class="s1">size -= len(data)</span>
+            <span class="s1">total_data += data</span>
+        <span class="s4">return </span><span class="s1">total_data.decode()</span>
+
+    <span class="s1">@staticmethod</span>
+    <span class="s4">def </span><span class="s1">send_bin(sock</span><span class="s4">, </span><span class="s1">data):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Send binary data over a socket with a fixed-size header indicating 
+        the data length. 
+ 
+        Args: 
+            sock (socket.socket): The socket over which to send the data. 
+            data (bytes): The binary data to send. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">length_str = str(len(data)).zfill(SIZE_TO_FILL)</span>
+        <span class="s1">sock.send(length_str.encode(</span><span class="s6">'utf-8'</span><span class="s1">))  </span><span class="s3"># Send size info</span>
+        <span class="s1">sock.send(data)  </span><span class="s3"># Send actual data</span>
+
+    <span class="s1">@staticmethod</span>
+    <span class="s4">def </span><span class="s1">recv_bin(sock):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Receive binary data over a socket with a fixed-size header indicating 
+        the data length. 
+ 
+        Args: 
+            sock (socket.socket): The socket from which to receive the data. 
+ 
+        Returns: 
+            bytes: The received binary data. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">data_size_bytes = sock.recv(SIZE_TO_FILL)</span>
+        <span class="s1">data_size_str = data_size_bytes.decode(</span><span class="s6">'utf-8'</span><span class="s1">)</span>
+        <span class="s4">if not </span><span class="s1">data_size_str.isdigit():</span>
+            <span class="s4">raise </span><span class="s1">ValueError(</span><span class="s6">f&quot;Invalid data size received: </span><span class="s4">{</span><span class="s1">data_size_bytes</span><span class="s4">}</span><span class="s6">&quot;</span><span class="s1">)</span>
+
+        <span class="s1">size = int(data_size_str)</span>
+        <span class="s1">total_data = </span><span class="s5">b''</span>
+        <span class="s4">while </span><span class="s1">size &gt; </span><span class="s2">0</span><span class="s1">:</span>
+            <span class="s1">part = sock.recv(size)</span>
+            <span class="s4">if not </span><span class="s1">part:</span>
+                <span class="s4">raise </span><span class="s1">ConnectionError(</span>
+                    <span class="s6">&quot;Connection closed during data reception&quot;</span><span class="s1">)</span>
+            <span class="s1">total_data += part</span>
+            <span class="s1">size -= len(part)</span>
+
+        <span class="s4">return </span><span class="s1">total_data</span>
+</pre>
+</body>
+</html>

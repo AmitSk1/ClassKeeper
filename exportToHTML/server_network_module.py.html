@@ -1,0 +1,115 @@
+<html>
+<head>
+<title>server_network_module.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #808080;}
+.s4 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+server_network_module.py</font>
+</center></td></tr></table>
+<pre><span class="s0">&quot;&quot;&quot; 
+Server for network communication 
+Amit Skarbin 
+&quot;&quot;&quot;</span>
+
+<span class="s2">import </span><span class="s1">socket</span>
+<span class="s2">import </span><span class="s1">threading</span>
+<span class="s2">from </span><span class="s1">Protocols.protocol </span><span class="s2">import </span><span class="s1">Protocol</span>
+
+
+<span class="s2">class </span><span class="s1">ServerNetworkModule:</span>
+    <span class="s2">def </span><span class="s1">__init__(self</span><span class="s2">, </span><span class="s1">host</span><span class="s2">, </span><span class="s1">port</span><span class="s2">, </span><span class="s1">client_handler_callback):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Initializes the network module with server host and port. 
+ 
+        Args: 
+            host (str): The IP address or hostname of the server. 
+            port (int): The port number on which the server listens. 
+            client_handler_callback (function): A callback function that will 
+            be called to handle client communication. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.host = host</span>
+        <span class="s1">self.port = port</span>
+        <span class="s1">self.client_handler_callback = client_handler_callback</span>
+        <span class="s1">self.server_socket = socket.socket(socket.AF_INET</span><span class="s2">, </span><span class="s1">socket.SOCK_STREAM)</span>
+        <span class="s1">self.server_socket.bind((self.host</span><span class="s2">, </span><span class="s1">self.port))</span>
+        <span class="s1">self.clients = {}  </span><span class="s3"># Dictionary to store connected clients</span>
+        <span class="s1">self.running = </span><span class="s2">False</span>
+
+    <span class="s2">def </span><span class="s1">notify_clients_test_over(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Notify all connected clients that the test is over. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">for </span><span class="s1">client_address</span><span class="s2">, </span><span class="s1">client_socket </span><span class="s2">in </span><span class="s1">self.clients.items():</span>
+            <span class="s2">try</span><span class="s1">:</span>
+                <span class="s1">Protocol.send(client_socket</span><span class="s2">, </span><span class="s4">&quot;TEST_OVER&quot;</span><span class="s1">)</span>
+            <span class="s2">except </span><span class="s1">Exception </span><span class="s2">as </span><span class="s1">e:</span>
+                <span class="s1">print(</span><span class="s4">f&quot;Error notifying client at </span><span class="s2">{</span><span class="s1">client_address</span><span class="s2">}</span><span class="s4">: </span><span class="s2">{</span><span class="s1">e</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">start_server(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Starts the server to listen for incoming connections and handle them. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.server_socket.listen()</span>
+        <span class="s1">self.running = </span><span class="s2">True</span>
+        <span class="s1">print(</span><span class="s4">f&quot;Server started on </span><span class="s2">{</span><span class="s1">self.host</span><span class="s2">}</span><span class="s4">:</span><span class="s2">{</span><span class="s1">self.port</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s1">)</span>
+        <span class="s1">accept_thread = threading.Thread(target=self.accept_connections)</span>
+        <span class="s1">accept_thread.start()</span>
+
+    <span class="s2">def </span><span class="s1">accept_connections(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Accepts incoming connections and starts a new thread for each client. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">while </span><span class="s1">self.running:</span>
+            <span class="s2">try</span><span class="s1">:</span>
+                <span class="s1">client_socket</span><span class="s2">, </span><span class="s1">client_address = self.server_socket.accept()</span>
+
+                <span class="s1">print(</span><span class="s4">f&quot;Client connected from </span><span class="s2">{</span><span class="s1">client_address</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s1">)</span>
+                <span class="s3"># Add client to the dictionary</span>
+                <span class="s1">self.clients[client_address] = client_socket</span>
+                <span class="s3"># Start a new thread to handle communication with this client</span>
+                <span class="s1">client_thread = threading.\</span>
+                    <span class="s1">Thread(target=self.</span>
+                           <span class="s1">client_handler_callback</span><span class="s2">,</span>
+                           <span class="s1">args=(client_socket</span><span class="s2">, </span><span class="s1">client_address))</span>
+                <span class="s1">client_thread.start()</span>
+            <span class="s2">except </span><span class="s1">Exception </span><span class="s2">as </span><span class="s1">e:</span>
+                <span class="s1">print(</span><span class="s4">f&quot;Error accepting new connection: </span><span class="s2">{</span><span class="s1">e</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s1">)</span>
+                <span class="s2">if not </span><span class="s1">self.running:</span>
+                    <span class="s2">break  </span><span class="s3"># Exit the loop if the server is stopped</span>
+
+    <span class="s2">def </span><span class="s1">stop_server(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Stops the server and closes all resources. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.running = </span><span class="s2">False</span>
+        <span class="s1">self.notify_clients_test_over()</span>
+        <span class="s2">for </span><span class="s1">client_address</span><span class="s2">, </span><span class="s1">client_socket </span><span class="s2">in </span><span class="s1">self.clients.items():</span>
+            <span class="s1">client_socket.close()</span>
+        <span class="s1">self.server_socket.close()</span>
+        <span class="s1">print(</span><span class="s4">&quot;Server stopped&quot;</span><span class="s1">)</span>
+
+
+
+    <span class="s2">def </span><span class="s1">remove_client(self</span><span class="s2">, </span><span class="s1">client_address):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Removes a client from the connected clients dictionary. 
+ 
+        Args: 
+            client_address (tuple): The address of the client to remove. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">if </span><span class="s1">client_address </span><span class="s2">in </span><span class="s1">self.clients:</span>
+            <span class="s2">del </span><span class="s1">self.clients[client_address]</span>
+            <span class="s1">print(</span><span class="s4">f&quot;Client </span><span class="s2">{</span><span class="s1">client_address</span><span class="s2">} </span><span class="s4">removed&quot;</span><span class="s1">)</span>
+</pre>
+</body>
+</html>

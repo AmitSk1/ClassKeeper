@@ -1,0 +1,178 @@
+<html>
+<head>
+<title>client.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #808080;}
+.s4 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+client.py</font>
+</center></td></tr></table>
+<pre><span class="s0">&quot;&quot;&quot; 
+Client 
+Amit Skarbin 
+&quot;&quot;&quot;</span>
+
+<span class="s2">import </span><span class="s1">pickle</span>
+<span class="s2">import </span><span class="s1">sys</span>
+<span class="s2">import </span><span class="s1">threading</span>
+<span class="s2">import </span><span class="s1">cv2</span>
+<span class="s2">from </span><span class="s1">Client_Modules.client_network_module </span><span class="s2">import </span><span class="s1">ClientNetworkModule</span>
+<span class="s2">from </span><span class="s1">Client_Modules.client_streaming </span><span class="s2">import </span><span class="s1">ClientStreamingModule</span>
+<span class="s2">from </span><span class="s1">Client_Modules.client_file_management_module \</span>
+    <span class="s2">import </span><span class="s1">ClientFileManagementModule</span>
+<span class="s2">from </span><span class="s1">constants </span><span class="s2">import </span><span class="s1">JPEG_COMPRESSION_QUALITY</span><span class="s2">, </span><span class="s1">PICKLE_PROTOCOL_VERSION</span>
+<span class="s2">from </span><span class="s1">Protocols.protocol </span><span class="s2">import </span><span class="s1">Protocol</span>
+
+
+<span class="s2">class </span><span class="s1">Client:</span>
+    <span class="s0">&quot;&quot;&quot; 
+    A class representing a streaming client that sends video data to a server. 
+ 
+    Attributes: 
+        network_module (ClientNetworkModule): Manages network communication. 
+        streaming_module (ClientStreamingModule): Handles video streaming. 
+        file_management_module (ClientFileManagementModule): Manages file 
+        operations. 
+ 
+        username (str): The username of the client. 
+        running (bool): Indicates whether the streaming is active. 
+    &quot;&quot;&quot;</span>
+
+    <span class="s2">def </span><span class="s1">__init__(self</span><span class="s2">, </span><span class="s1">host</span><span class="s2">, </span><span class="s1">port):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Initializes the streaming client with the specified server address. 
+ 
+        Args: 
+            host (str): The server's hostname or IP address. 
+            port (int): The port number on which the server is listening. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.network_module = ClientNetworkModule(host</span><span class="s2">, </span><span class="s1">port)</span>
+        <span class="s1">self.streaming_module = ClientStreamingModule()</span>
+        <span class="s1">self.file_management_module = ClientFileManagementModule(</span>
+            <span class="s1">self.network_module.file_socket)</span>
+        <span class="s1">self.username = </span><span class="s2">None</span>
+        <span class="s1">self.test_over = </span><span class="s2">False</span>
+        <span class="s1">self.stream_thread = </span><span class="s2">None</span>
+        <span class="s1">self.listen_thread = </span><span class="s2">None</span>
+        <span class="s1">self.running = </span><span class="s2">False</span>
+
+    <span class="s2">def </span><span class="s1">start_stream(self</span><span class="s2">, </span><span class="s1">username):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Starts the video streaming process. 
+ 
+        Args: 
+            username (str): The username to be associated with the streamed 
+            video. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.username = username</span>
+        <span class="s1">self.running = </span><span class="s2">True</span>
+        <span class="s1">self.network_module.connect_to_server()</span>
+        <span class="s1">self.stream_thread = threading.Thread(target=self.stream_video</span><span class="s2">,</span>
+                                              <span class="s1">daemon=</span><span class="s2">True</span><span class="s1">)</span>
+        <span class="s1">self.stream_thread.start()</span>
+        <span class="s3"># Start the listening thread</span>
+        <span class="s1">self.listen_thread = threading.Thread(target=self.listen_to_server)</span>
+        <span class="s1">self.listen_thread.start()</span>
+
+    <span class="s2">def </span><span class="s1">listen_to_server(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Listens for server messages, specifically for the &quot;TEST_OVER&quot; signal. 
+        If &quot;TEST_OVER&quot; message is received, it indicates 
+        the server has ended the test, and sets 
+        `test_over` flag to True. s 
+        Raises: 
+            Exception: Logs any network communication errors encountered. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">try</span><span class="s1">:</span>
+            <span class="s2">while </span><span class="s1">self.running:</span>
+                <span class="s1">message = Protocol.recv(self.network_module.listen_socket)</span>
+                <span class="s2">if </span><span class="s1">message == </span><span class="s4">&quot;TEST_OVER&quot;</span><span class="s1">:</span>
+                    <span class="s1">self.test_over = </span><span class="s2">True</span>
+                    <span class="s1">print(</span><span class="s4">&quot;Received TEST_OVER from server, stopping client.&quot;</span><span class="s1">)</span>
+        <span class="s2">except </span><span class="s1">Exception </span><span class="s2">as </span><span class="s1">e:</span>
+            <span class="s1">print(</span><span class="s4">f&quot;listen to server have an error: </span><span class="s2">{</span><span class="s1">e</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">stop_stream(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Stops the video streaming process and releases resources. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">self.streaming_module.camera.release()</span>
+        <span class="s1">self.network_module.close_sockets()</span>
+
+        <span class="s1">print(</span><span class="s4">&quot;Streaming stopped&quot;</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">stream_video(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Continuously captures and sends video frames to the server. 
+        &quot;&quot;&quot;</span>
+        <span class="s2">while </span><span class="s1">self.running:</span>
+
+            <span class="s1">screen_np = self.streaming_module.capture_screen()</span>
+            <span class="s1">cam_frame = self.streaming_module.capture_camera_frame()</span>
+            <span class="s2">if </span><span class="s1">cam_frame </span><span class="s2">is None</span><span class="s1">:</span>
+                <span class="s2">break</span>
+
+            <span class="s1">combined_frame = self.streaming_module.combine_frames(screen_np</span><span class="s2">,</span>
+                                                                  <span class="s1">cam_frame)</span>
+            <span class="s2">if not </span><span class="s1">self.send_frame(combined_frame):</span>
+                <span class="s2">break</span>
+
+        <span class="s1">self.stop_stream()</span>
+
+    <span class="s2">def </span><span class="s1">send_frame(self</span><span class="s2">, </span><span class="s1">frame):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Encodes and sends a video frame to the server. 
+ 
+        Args: 
+            frame (numpy.ndarray): The video frame to send. 
+ 
+        Returns: 
+            bool: True if the frame was sent successfully, False otherwise. 
+        &quot;&quot;&quot;</span>
+
+        <span class="s1">Protocol.send(self.network_module.stream_socket</span><span class="s2">, </span><span class="s4">&quot;STREAM&quot;</span><span class="s1">)</span>
+        <span class="s1">result</span><span class="s2">, </span><span class="s1">encoded_frame = cv2. \</span>
+            <span class="s1">imencode(</span><span class="s4">'.jpg'</span><span class="s2">, </span><span class="s1">frame</span><span class="s2">, </span><span class="s1">[cv2.IMWRITE_JPEG_QUALITY</span><span class="s2">,</span>
+                                     <span class="s1">JPEG_COMPRESSION_QUALITY])</span>
+        <span class="s2">if not </span><span class="s1">result:</span>
+            <span class="s2">return False</span>
+
+        <span class="s1">frame_and_username = (encoded_frame</span><span class="s2">, </span><span class="s1">self.username)</span>
+        <span class="s1">data = pickle.dumps(frame_and_username</span><span class="s2">,</span>
+                            <span class="s1">protocol=PICKLE_PROTOCOL_VERSION)</span>
+        <span class="s2">try</span><span class="s1">:</span>
+            <span class="s1">Protocol.send_bin(self.network_module.stream_socket</span><span class="s2">, </span><span class="s1">data)</span>
+            <span class="s2">return True</span>
+        <span class="s2">except </span><span class="s1">Exception </span><span class="s2">as </span><span class="s1">e:</span>
+            <span class="s1">print(</span><span class="s4">f&quot;Connection closed: </span><span class="s2">{</span><span class="s1">e</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s1">)</span>
+            <span class="s2">return False</span>
+
+    <span class="s2">def </span><span class="s1">stop_client(self):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Signals the client to stop streaming and shuts down the connection. 
+        &quot;&quot;&quot;</span>
+
+        <span class="s3"># Ensure the running flag is False to stop threads</span>
+        <span class="s1">self.running = </span><span class="s2">False</span>
+        <span class="s1">Protocol.send(self.network_module.stream_socket</span><span class="s2">, </span><span class="s4">&quot;STOP&quot;</span><span class="s1">)</span>
+        <span class="s3"># Wait for the streaming and listening threads to finish</span>
+        <span class="s2">if </span><span class="s1">self.stream_thread </span><span class="s2">and </span><span class="s1">self.stream_thread.is_alive():</span>
+            <span class="s1">self.stream_thread.join()</span>
+        <span class="s2">if </span><span class="s1">self.listen_thread </span><span class="s2">and </span><span class="s1">self.listen_thread.is_alive():</span>
+            <span class="s1">self.listen_thread.join()</span>
+
+        <span class="s1">self.stop_stream()</span>
+        <span class="s1">sys.exit()  </span><span class="s3"># Exit the program</span>
+        <span class="s1">print(</span><span class="s4">&quot;Client has been stopped.&quot;</span><span class="s1">)</span>
+</pre>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<html>
+<head>
+<title>file_protocol.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #629755; font-style: italic;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #808080;}
+.s4 { color: #6a8759;}
+.s5 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+file_protocol.py</font>
+</center></td></tr></table>
+<pre><span class="s0">&quot;&quot;&quot; 
+Amit skarbin 
+&quot;&quot;&quot;</span>
+
+<span class="s2">import </span><span class="s1">os</span>
+<span class="s2">import </span><span class="s1">struct</span>
+<span class="s2">from </span><span class="s1">constants </span><span class="s2">import </span><span class="s1">CHUNK_SIZE</span>
+
+
+<span class="s2">class </span><span class="s1">FileProtocol:</span>
+
+    <span class="s1">@staticmethod</span>
+    <span class="s2">def </span><span class="s1">send_file(sock</span><span class="s2">, </span><span class="s1">file_path):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Sends a file over a socket. 
+ 
+        Args: 
+            sock (socket.socket): The socket over which to send the file. 
+            file_path (str): The path of the file to send. 
+        &quot;&quot;&quot;</span>
+        <span class="s1">file_name = os.path.basename(file_path)</span>
+        <span class="s1">file_name_encoded = file_name.encode()</span>
+
+        <span class="s3"># Send the file name size and file name</span>
+        <span class="s1">sock.sendall(struct.pack(</span><span class="s4">'&gt;Q'</span><span class="s2">, </span><span class="s1">len(file_name_encoded)))</span>
+        <span class="s1">sock.sendall(file_name_encoded)</span>
+
+        <span class="s3"># Send the file content</span>
+        <span class="s2">with </span><span class="s1">open(file_path</span><span class="s2">, </span><span class="s4">'rb'</span><span class="s1">) </span><span class="s2">as </span><span class="s1">file:</span>
+            <span class="s1">file_size = os.path.getsize(file_path)</span>
+            <span class="s1">sock.sendall(struct.pack(</span><span class="s4">'&gt;Q'</span><span class="s2">, </span><span class="s1">file_size))</span>
+
+            <span class="s2">while True</span><span class="s1">:</span>
+                <span class="s1">data = file.read(CHUNK_SIZE)</span>
+                <span class="s2">if not </span><span class="s1">data:</span>
+                    <span class="s2">break</span>
+                <span class="s1">sock.sendall(data)</span>
+
+    <span class="s1">@staticmethod</span>
+    <span class="s2">def </span><span class="s1">recv_file(sock</span><span class="s2">, </span><span class="s1">directory):</span>
+        <span class="s0">&quot;&quot;&quot; 
+        Receives a file over a socket and saves it to the specified directory. 
+ 
+        Args: 
+            sock (socket.socket): The socket from which to receive the file. 
+            directory (str): The directory where the file will be saved. 
+        &quot;&quot;&quot;</span>
+        <span class="s3"># Receive the file name size and file name</span>
+        <span class="s1">name_size_data = sock.recv(</span><span class="s5">8</span><span class="s1">)</span>
+        <span class="s1">name_size = struct.unpack(</span><span class="s4">'&gt;Q'</span><span class="s2">, </span><span class="s1">name_size_data)[</span><span class="s5">0</span><span class="s1">]</span>
+        <span class="s1">file_name_encoded = sock.recv(name_size)</span>
+        <span class="s1">file_name = file_name_encoded.decode()</span>
+
+        <span class="s3"># Ensure the directory exists</span>
+        <span class="s1">os.makedirs(directory</span><span class="s2">, </span><span class="s1">exist_ok=</span><span class="s2">True</span><span class="s1">)</span>
+        <span class="s1">save_path = os.path.join(directory</span><span class="s2">, </span><span class="s1">file_name)</span>
+
+        <span class="s3"># Receive the file content</span>
+        <span class="s1">file_size_data = sock.recv(</span><span class="s5">8</span><span class="s1">)</span>
+        <span class="s1">file_size = struct.unpack(</span><span class="s4">'&gt;Q'</span><span class="s2">, </span><span class="s1">file_size_data)[</span><span class="s5">0</span><span class="s1">]</span>
+
+        <span class="s2">with </span><span class="s1">open(save_path</span><span class="s2">, </span><span class="s4">'wb'</span><span class="s1">) </span><span class="s2">as </span><span class="s1">file:</span>
+            <span class="s1">received_size = </span><span class="s5">0</span>
+            <span class="s2">while </span><span class="s1">received_size &lt; file_size:</span>
+                <span class="s1">data = sock.recv(min(CHUNK_SIZE</span><span class="s2">, </span><span class="s1">file_size - received_size))</span>
+                <span class="s2">if not </span><span class="s1">data:</span>
+                    <span class="s2">break</span>
+                <span class="s1">file.write(data)</span>
+                <span class="s1">received_size += len(data)</span>
+</pre>
+</body>
+</html>
